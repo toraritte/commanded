@@ -49,14 +49,25 @@ defmodule Commanded.Mixfile do
 
   defp deps do
     [
+      """
+      NOTE 2018-10-26_1528
+      These deps  will always conflict during  `git rebase
+      upstream/master`  because   "annotate"  is  branched
+      after  the  stupid  "include-*" branches  have  been
+      merged, but  I don't  want to  lose the  comments in
+      here. Will move them to a saner branch.
+      """
       {:elixir_uuid, "~> 1.2"},
       {:poison, "~> 3.1 or ~> 4.0", optional: true},
+      {:poison, "~> 3.1 or ~> 4.0"},
+      {:ecto, "~> 2.2", runtime: false},
 
       # Build & test tools
       {:dialyxir, "~> 0.5", only: :dev, runtime: false},
       {:ex_doc, "~> 0.19", only: :dev},
       {:mix_test_watch, "~> 0.9", only: :dev},
       {:mox, "~> 0.4", only: :test},
+      {:postgrex, "~> 0.13", only: :test},
 
       # Optional dependencies
       {:phoenix_pubsub, "~> 1.1", optional: true}
