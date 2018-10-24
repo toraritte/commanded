@@ -14,7 +14,29 @@ defmodule Commanded.EventStore.Adapters.EventStore do
 
   alias Commanded.EventStore.{EventData, RecordedEvent, SnapshotData}
 
-  # On `child_spec([]): https://elixirforum.com/t/genserver-and-child-spec/7994/2
+  @doc """
+  NOTE 2018-10-24_1532
+  What's   the   point   of  this   child   spec?   It
+  returns   an  empty   list,  appended   to  children
+  in   Commanded.Supervisor,  which   means  that   it
+  is  effectively  ignored.   If  this  adapter  would
+  have   been   included  idiomatically   (i.e.,   not
+  called   explicitly   as   `EventStore.child_spec()`
+  in  `Commanded.Supervisor`), the  `mod.child_spec/1`
+  function would have been called automatically.
+
+  Also,   every   single   entry   in   children   are
+  OTP-compliant modules  except for this one  (and its
+  corresponding EventStore behaviour).
+    * Registration behaviour -> LocalRegistry -> Registry
+    * PubSub behaviour -> LocalPubSub -> Registry instances
+    * Task.Supervisor -> no comment
+    * Commanded.Aggregates.Supervisor -> no comment
+    * Subscriptions -> GenServer
+
+  Refresher on `child_spec([])`:
+  https://elixirforum.com/t/genserver-and-child-spec/7994/2
+  """
   @impl Commanded.EventStore
   def child_spec, do: []
 
