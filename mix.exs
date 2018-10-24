@@ -61,6 +61,7 @@ defmodule Commanded.Mixfile do
       {:poison, "~> 3.1 or ~> 4.0", optional: true},
       {:poison, "~> 3.1 or ~> 4.0"},
       {:ecto, "~> 2.2", runtime: false},
+      {:eventstore, "~> 0.15"},
 
       # Build & test tools
       {:dialyxir, "~> 0.5", only: :dev, runtime: false},
