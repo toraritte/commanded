@@ -14,6 +14,7 @@ defmodule Commanded.EventStore.Adapters.EventStore do
 
   alias Commanded.EventStore.{EventData, RecordedEvent, SnapshotData}
 
+  # On `child_spec([]): https://elixirforum.com/t/genserver-and-child-spec/7994/2
   @impl Commanded.EventStore
   def child_spec, do: []
 
