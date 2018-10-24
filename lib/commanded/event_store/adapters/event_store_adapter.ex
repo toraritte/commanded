@@ -2,6 +2,12 @@ defmodule Commanded.EventStore.Adapters.EventStore do
   @moduledoc """
   [EventStore](https://github.com/commanded/eventstore) adapter for
   [Commanded](https://github.com/commanded/commanded).
+
+  **Note**: There are multiple EventStore modules referenced in this adapter.
+
+    * The external event persistence library by Ben Smith (`EventStore`)
+    * The internal EventStore behaviour (`Commanded.EventStore`)
+    * The internal EventStore adapter   (`Commanded.EventStore.Adapters.EventStore`)
   """
 
   @behaviour Commanded.EventStore
