@@ -71,6 +71,18 @@ defmodule Commanded.Mixfile do
       {:postgrex, "~> 0.13", only: :test},
 
       # Optional dependencies
+      @doc """
+      NOTE 2018-10-24_2246 for "make-application-more-idiomatic" branch
+      Making  `phoenix_pubsub`   permanent  dependency  to
+      replace  LocalPubSub.  Its  `child_spec/0`  function
+      is  not   compliant  with   Elixir's  `child_spec/1`
+      expectation  and it  also  returns a  list of  child
+      specs  as  it  is  implemented  using  two  Registry
+      processes.  Ben  already  included  an  adapter  for
+      PhoenixPubSub  and starting  from version  1.1.1, it
+      can be directly started in a supervision tree.
+
+      """
       {:phoenix_pubsub, "~> 1.1", optional: true}
     ]
   end
