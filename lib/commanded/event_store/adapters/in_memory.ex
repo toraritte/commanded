@@ -24,25 +24,18 @@ defmodule Commanded.EventStore.Adapters.InMemory do
   alias Commanded.EventStore.Adapters.InMemory.{State, Subscription}
   alias Commanded.EventStore.{EventData, RecordedEvent, SnapshotData}
 
-  def start_link(opts \\ []) do
-    state = %State{serializer: Keyword.get(opts, :serializer)}
-
-    GenServer.start_link(__MODULE__, state, name: __MODULE__)
+  def start_link(_init_arg) do
+    GenServer.start_link(__MODULE__, :nil, name: __MODULE__)
   end
 
   @impl GenServer
-  def init(%State{} = state) do
+  def init(_arg) do
+    state =
+      Application.get_env(:commanded, __MODULE__)
+      |> Keyword.get(:serializer)
+      |> (&Map.put(%State{}, :serializer, &1)).()
+
     {:ok, state}
-  end
-
-  @impl Commanded.EventStore
-  def child_spec do
-    opts = Application.get_env(:commanded, __MODULE__)
-
-    [
-      child_spec(opts),
-      {DynamicSupervisor, strategy: :one_for_one, name: __MODULE__.SubscriptionsSupervisor}
-    ]
   end
 
   @impl Commanded.EventStore
