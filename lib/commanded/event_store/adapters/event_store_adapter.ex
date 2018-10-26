@@ -36,6 +36,14 @@ defmodule Commanded.EventStore.Adapters.EventStore do
 
   Refresher on `child_spec([])`:
   https://elixirforum.com/t/genserver-and-child-spec/7994/2
+  \
+   \
+  UPDATE 2018-10-25_1635
+  The name is misleading, because it resembles the child specification(s) required by supervisors, but in returns a list of child specs (plural!) to processes supporting the adapter in its efforts to communicate with the EventStore implementation itself.
+  + commanded/commanded-extreme-adapter
+  Used for Greg Young's EventStore. Its `application.ex` starts the main supervisor, that in turn starts two support workers. Right now I think that this is unnecessarybecause it bypasses the idiomatic ways OTP applications are started in Elixir. That is, just putting these workers into the 
+  STOP
+  think this through. there is no application.ex in a lib. look at the notes again and on github, but I think I'm on the right track
   """
   @impl Commanded.EventStore
   def child_spec, do: []
