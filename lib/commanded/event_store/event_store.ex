@@ -16,11 +16,6 @@ defmodule Commanded.EventStore do
   @type error :: term
 
   @doc """
-  Return a child spec defining all processes required by the event store.
-  """
-  @callback child_spec() :: [:supervisor.child_spec()]
-
-  @doc """
   Append one or more events to a stream atomically.
   """
   @callback append_to_stream(
@@ -135,11 +130,6 @@ defmodule Commanded.EventStore do
   Delete a previously recorded snapshot for a given source
   """
   @callback delete_snapshot(source_uuid) :: :ok | {:error, error}
-
-  @spec child_spec() :: [:supervisor.child_spec()]
-  def child_spec do
-    event_store_adapter().child_spec()
-  end
 
   @doc """
   Append one or more events to a stream atomically.

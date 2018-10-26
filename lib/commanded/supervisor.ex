@@ -10,7 +10,6 @@ defmodule Commanded.Supervisor do
 
   def init(_) do
     children =
-      EventStore.child_spec() ++
         Registration.child_spec() ++
         PubSub.child_spec() ++
         [
