@@ -2,6 +2,8 @@ defmodule Commanded.Application do
   @moduledoc false
   use Application
 
+  alias Commanded.{Registration, PubSub}
+
   def start(_type, _args) do
     """
     TODO: 2018-10-26_1437
