@@ -54,6 +54,11 @@ defmodule Commanded.Mixfile do
       # Build & test tools
       {:dialyxir, "~> 0.5", only: :dev, runtime: false},
       {:ex_doc, "~> 0.19", only: :dev},
+      # 2019-01-11_2313 TODO:
+      # Remove mix_test_watch. The idea is good, but it just
+      # throws  a  bunch of  errors  in  IEx when  saving  a
+      # legit modification,  and then the project  has to be
+      # compiled by hand anyway.
       {:mix_test_watch, "~> 0.9", only: :dev},
       {:mox, "~> 0.4", only: :test},
 
