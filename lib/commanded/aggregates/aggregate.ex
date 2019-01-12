@@ -43,7 +43,7 @@ defmodule Commanded.Aggregates.Aggregate do
 
   require Logger
 
-  alias Commanded.Aggregates.{Aggregate, ExecutionContext}
+  alias Commanded.Aggregates.ExecutionContext
   alias Commanded.Event.Mapper
   alias Commanded.EventStore
   alias Commanded.EventStore.{RecordedEvent, SnapshotData}
@@ -62,7 +62,7 @@ defmodule Commanded.Aggregates.Aggregate do
 
   def start_link(aggregate_module, aggregate_uuid, opts \\ [])
       when is_atom(aggregate_module) and is_binary(aggregate_uuid) do
-    aggregate = %Aggregate{
+    aggregate = %__MODULE__{
       aggregate_module: aggregate_module,
       aggregate_uuid: aggregate_uuid,
       snapshotting: Snapshotting.new(aggregate_uuid, snapshot_options(aggregate_module))
@@ -77,7 +77,7 @@ defmodule Commanded.Aggregates.Aggregate do
       do: {aggregate_module, aggregate_uuid}
 
   @doc false
-  def init(%Aggregate{} = state) do
+  def init(%__MODULE__{} = state) do
     # Initial aggregate state is populated by loading its state snapshot and/or
     # events from the event store.
     :ok = GenServer.cast(self(), :populate_aggregate_state)
@@ -141,13 +141,13 @@ defmodule Commanded.Aggregates.Aggregate do
   end
 
   @doc false
-  def handle_cast(:populate_aggregate_state, %Aggregate{} = state) do
+  def handle_cast(:populate_aggregate_state, %__MODULE__{} = state) do
     {:noreply, populate_aggregate_state(state)}
   end
 
   @doc false
-  def handle_cast(:subscribe_to_events, %Aggregate{} = state) do
-    %Aggregate{aggregate_uuid: aggregate_uuid} = state
+  def handle_cast(:subscribe_to_events, %__MODULE__{} = state) do
+    %__MODULE__{aggregate_uuid: aggregate_uuid} = state
 
     :ok = EventStore.subscribe(aggregate_uuid)
 
@@ -155,8 +155,8 @@ defmodule Commanded.Aggregates.Aggregate do
   end
 
   @doc false
-  def handle_cast(:take_snapshot, %Aggregate{} = state) do
-    %Aggregate{
+  def handle_cast(:take_snapshot, %__MODULE__{} = state) do
+    %__MODULE__{
       aggregate_state: aggregate_state,
       aggregate_version: aggregate_version,
       lifespan_timeout: lifespan_timeout,
@@ -168,7 +168,7 @@ defmodule Commanded.Aggregates.Aggregate do
     state =
       case Snapshotting.take_snapshot(snapshotting, aggregate_version, aggregate_state) do
         {:ok, snapshotting} ->
-          %Aggregate{state | snapshotting: snapshotting}
+          %__MODULE__{state | snapshotting: snapshotting}
 
         {:error, error} ->
           Logger.warn(fn -> describe(state) <> " snapshot failed due to: " <> inspect(error) end)
@@ -186,7 +186,7 @@ defmodule Commanded.Aggregates.Aggregate do
   end
 
   @doc false
-  def handle_call({:execute_command, %ExecutionContext{} = context}, _from, %Aggregate{} = state) do
+  def handle_call({:execute_command, %ExecutionContext{} = context}, _from, %__MODULE__{} = state) do
     %ExecutionContext{lifespan: lifespan, command: command} = context
 
     {reply, state} = execute_command(context, state)
@@ -203,9 +203,9 @@ defmodule Commanded.Aggregates.Aggregate do
           aggregate_lifespan_timeout(lifespan, :after_error, error)
       end
 
-    state = %Aggregate{state | lifespan_timeout: lifespan_timeout}
+    state = %__MODULE__{state | lifespan_timeout: lifespan_timeout}
 
-    %Aggregate{aggregate_version: aggregate_version, snapshotting: snapshotting} = state
+    %__MODULE__{aggregate_version: aggregate_version, snapshotting: snapshotting} = state
 
     if Snapshotting.snapshot_required?(snapshotting, aggregate_version) do
       :ok = GenServer.cast(self(), :take_snapshot)
@@ -220,22 +220,22 @@ defmodule Commanded.Aggregates.Aggregate do
   end
 
   @doc false
-  def handle_call(:aggregate_state, _from, %Aggregate{} = state) do
-    %Aggregate{aggregate_state: aggregate_state} = state
+  def handle_call(:aggregate_state, _from, %__MODULE__{} = state) do
+    %__MODULE__{aggregate_state: aggregate_state} = state
 
     {:reply, aggregate_state, state}
   end
 
   @doc false
-  def handle_call(:aggregate_version, _from, %Aggregate{} = state) do
-    %Aggregate{aggregate_version: aggregate_version} = state
+  def handle_call(:aggregate_version, _from, %__MODULE__{} = state) do
+    %__MODULE__{aggregate_version: aggregate_version} = state
 
     {:reply, aggregate_version, state}
   end
 
   @doc false
-  def handle_info({:events, events}, %Aggregate{} = state) do
-    %Aggregate{lifespan_timeout: lifespan_timeout} = state
+  def handle_info({:events, events}, %__MODULE__{} = state) do
+    %__MODULE__{lifespan_timeout: lifespan_timeout} = state
 
     Logger.debug(fn -> describe(state) <> " received events: #{inspect(events)}" end)
 
@@ -253,7 +253,7 @@ defmodule Commanded.Aggregates.Aggregate do
   end
 
   @doc false
-  def handle_info(:timeout, %Aggregate{} = state) do
+  def handle_info(:timeout, %__MODULE__{} = state) do
     Logger.debug(fn -> describe(state) <> " stopping due to inactivity timeout" end)
 
     {:stop, :normal, state}
@@ -261,10 +261,10 @@ defmodule Commanded.Aggregates.Aggregate do
 
   # Handle events appended to the aggregate's stream, received by its
   # event store subscription, by applying any missed events to its state.
-  defp handle_event(%RecordedEvent{} = event, %Aggregate{} = state) do
+  defp handle_event(%RecordedEvent{} = event, %__MODULE__{} = state) do
     %RecordedEvent{data: data, stream_version: stream_version} = event
 
-    %Aggregate{
+    %__MODULE__{
       aggregate_module: aggregate_module,
       aggregate_state: aggregate_state,
       aggregate_version: aggregate_version
@@ -275,7 +275,7 @@ defmodule Commanded.Aggregates.Aggregate do
     case stream_version do
       ^expected_version ->
         # apply event to aggregate's state
-        %Aggregate{
+        %__MODULE__{
           state
           | aggregate_version: stream_version,
             aggregate_state: aggregate_module.apply(aggregate_state, data)
@@ -301,13 +301,13 @@ defmodule Commanded.Aggregates.Aggregate do
   # If the snapshot exists, fetch any subsequent events to rebuild its state.
   # Otherwise start with the aggregate struct and stream all existing events for
   # the aggregate from the event store to rebuild its state from those events.
-  defp populate_aggregate_state(%Aggregate{} = state) do
-    %Aggregate{aggregate_module: aggregate_module, snapshotting: snapshotting} = state
+  defp populate_aggregate_state(%__MODULE__{} = state) do
+    %__MODULE__{aggregate_module: aggregate_module, snapshotting: snapshotting} = state
 
     aggregate =
       case Snapshotting.read_snapshot(snapshotting) do
         {:ok, %SnapshotData{source_version: source_version, data: data}} ->
-          %Aggregate{
+          %__MODULE__{
             state
             | aggregate_version: source_version,
               aggregate_state: data
@@ -315,15 +315,15 @@ defmodule Commanded.Aggregates.Aggregate do
 
         {:error, _error} ->
           # No snapshot present, or exists but for outdated state, so use intial empty state
-          %Aggregate{state | aggregate_version: 0, aggregate_state: struct(aggregate_module)}
+          %__MODULE__{state | aggregate_version: 0, aggregate_state: struct(aggregate_module)}
       end
 
     rebuild_from_events(aggregate)
   end
 
   # Load events from the event store, in batches, to rebuild the aggregate state
-  defp rebuild_from_events(%Aggregate{} = state) do
-    %Aggregate{aggregate_uuid: aggregate_uuid, aggregate_version: aggregate_version} = state
+  defp rebuild_from_events(%__MODULE__{} = state) do
+    %__MODULE__{aggregate_uuid: aggregate_uuid, aggregate_version: aggregate_version} = state
 
     case EventStore.stream_forward(aggregate_uuid, aggregate_version + 1, @read_event_batch_size) do
       {:error, :stream_not_found} ->
@@ -336,8 +336,8 @@ defmodule Commanded.Aggregates.Aggregate do
   end
 
   # Rebuild aggregate state from a `Stream` of its events
-  defp rebuild_from_event_stream(event_stream, %Aggregate{} = state) do
-    %Aggregate{aggregate_module: aggregate_module} = state
+  defp rebuild_from_event_stream(event_stream, %__MODULE__{} = state) do
+    %__MODULE__{aggregate_module: aggregate_module} = state
 
     event_stream
     |> Stream.map(fn event ->
@@ -349,7 +349,7 @@ defmodule Commanded.Aggregates.Aggregate do
           {:halt, state}
 
         event ->
-          state = %Aggregate{
+          state = %__MODULE__{
             state
             | aggregate_version: stream_version,
               aggregate_state: aggregate_module.apply(state.aggregate_state, event)
@@ -389,11 +389,11 @@ defmodule Commanded.Aggregates.Aggregate do
     end
   end
 
-  defp execute_command(%ExecutionContext{retry_attempts: retry_attempts}, %Aggregate{} = state)
+  defp execute_command(%ExecutionContext{retry_attempts: retry_attempts}, %__MODULE__{} = state)
        when retry_attempts < 0,
        do: {{:error, :too_many_attempts}, state}
 
-  defp execute_command(%ExecutionContext{} = context, %Aggregate{} = state) do
+  defp execute_command(%ExecutionContext{} = context, %__MODULE__{} = state) do
     %ExecutionContext{
       command: command,
       handler: handler,
@@ -401,7 +401,7 @@ defmodule Commanded.Aggregates.Aggregate do
       retry_attempts: retry_attempts
     } = context
 
-    %Aggregate{
+    %__MODULE__{
       aggregate_module: aggregate_module,
       aggregate_version: expected_version,
       aggregate_state: aggregate_state
@@ -452,13 +452,13 @@ defmodule Commanded.Aggregates.Aggregate do
     Enum.reduce(events, aggregate_state, &aggregate_module.apply(&2, &1))
   end
 
-  defp persist_events(pending_events, aggregate_state, context, %Aggregate{} = state) do
-    %Aggregate{aggregate_uuid: aggregate_uuid, aggregate_version: expected_version} = state
+  defp persist_events(pending_events, aggregate_state, context, %__MODULE__{} = state) do
+    %__MODULE__{aggregate_uuid: aggregate_uuid, aggregate_version: expected_version} = state
 
     with :ok <- append_to_stream(pending_events, aggregate_uuid, expected_version, context) do
       aggregate_version = expected_version + length(pending_events)
 
-      state = %Aggregate{
+      state = %__MODULE__{
         state
         | aggregate_state: aggregate_state,
           aggregate_version: aggregate_version
@@ -497,8 +497,8 @@ defmodule Commanded.Aggregates.Aggregate do
   defp via_name(aggregate_module, aggregate_uuid),
     do: name(aggregate_module, aggregate_uuid) |> via_tuple()
 
-  defp describe(%Aggregate{} = aggregate) do
-    %Aggregate{
+  defp describe(%__MODULE__{} = aggregate) do
+    %__MODULE__{
       aggregate_module: aggregate_module,
       aggregate_uuid: aggregate_uuid,
       aggregate_version: aggregate_version
