@@ -1,3 +1,24 @@
+# TODOs
+
+## 2019-01-16_0858 TODO mv {aggregate,stream}_version
+
+> Attila Gulyas @toraritte 07:42
+> > Hi,  I just  found out  about the  dispatch/2 option
+> > :include_aggregate_version   and  I   was  wondering
+> > whether this  refers to  stream version? I'm  new at
+> > CQRS  and  DDD,  and  my  current  understanding  is
+> > that stream  == aggregate instance  process. Indeed,
+> > in  the event  store  the result  also  seems to  be
+> > mapped to the  stream_version column, but throughout
+> > the  Commanded   repo  it  is   consistently  called
+> > aggregate_version. Am I missing something?
+> 
+> Ben Smith @slashdotdash 08:23
+> > Stream version  and aggregate  version are  the same
+> > thing.
+
+------------------------------------------------------------------------
+
 # Commanded
 
 Use Commanded to build your own Elixir applications following the [CQRS/ES](http://cqrs.nu/Faq) pattern.
