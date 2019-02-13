@@ -55,6 +55,7 @@ defmodule Commanded.Aggregates.Supervisor do
       worker(Commanded.Aggregates.Aggregate, [], restart: :temporary)
     ]
 
+    # 2019-02-13_0524 TODO (Replace deprecated strategy)
     supervise(children, strategy: :simple_one_for_one)
   end
 end
