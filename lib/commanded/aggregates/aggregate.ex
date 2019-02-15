@@ -38,6 +38,12 @@ defmodule Commanded.Aggregates.Aggregate do
 
   """
 
+  # 2019-02-13_0745 TODO/NOTE (Rename to `Stream`)
+  @doc """
+  Because  this   is  basically  a  template   for  an
+  aggregate instance (i.e., a stream).
+  """
+
   use GenServer
   use Commanded.Registration
 
@@ -304,6 +310,8 @@ defmodule Commanded.Aggregates.Aggregate do
   defp populate_aggregate_state(%__MODULE__{} = state) do
     %__MODULE__{aggregate_module: aggregate_module, snapshotting: snapshotting} = state
 
+    # 2019-02-13_0805 NOTE
+    # aggregate == state imbued with snapshot-specific info
     aggregate =
       case Snapshotting.read_snapshot(snapshotting) do
         {:ok, %SnapshotData{source_version: source_version, data: data}} ->
@@ -326,6 +334,29 @@ defmodule Commanded.Aggregates.Aggregate do
     %__MODULE__{aggregate_uuid: aggregate_uuid, aggregate_version: aggregate_version} = state
 
     case EventStore.stream_forward(aggregate_uuid, aggregate_version + 1, @read_event_batch_size) do
+
+      # 2019-02-13_0808 TODO/QUESTION (Shouldn't this crash instead?)
+      #
+      # I would want to know about this as soon as possible,
+      # if a stream  is not found, that should  be there. Or
+      # maybe provide this function with a bang version?
+
+      # When can this happen by the way?
+
+      # + EventStore not started? It will crash immediately,
+      #   that I tried
+
+      # + or,  just  realized,  this  is  how  entirely  new
+      #   streams  are created?  If UUID  is not  found, the
+      #   stream will get initialized  with an empty struct.
+      #   But then  why not create a  separate explicit case
+      #   for it?
+
+      # Well, then figure out how  to distinguish when is an
+      # aggregate a new one and  when it should be there. If
+      # the  DB is  not  running,  it's a  crash.  If it  is
+      # running, but  not there,  there could  a persistence
+      # issue, or maybe a race condition?
       {:error, :stream_not_found} ->
         # aggregate does not exist, return initial state
         state

@@ -56,6 +56,7 @@ defmodule Commanded.Aggregates.Supervisor do
     ]
 
     # 2019-02-13_0524 TODO (Replace deprecated strategy)
+    # 2019-02-13_0549 TODO (Also replace worker & supervise)
     supervise(children, strategy: :simple_one_for_one)
   end
 end
