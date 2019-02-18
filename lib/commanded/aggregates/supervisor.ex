@@ -19,6 +19,10 @@ defmodule Commanded.Aggregates.Supervisor do
     DynamicSupervisor.start_child(__MODULE__, {Commanded.Aggregates.Aggregate, args})
   end
 
+  def start_registered_child(args, via_tuple) do
+    __MODULE__.start_child(args ++ [[name: via_tuple]])
+  end
+
   @doc """
   Open an aggregate instance process for the given aggregate module and unique
   indentity.
@@ -32,9 +36,11 @@ defmodule Commanded.Aggregates.Supervisor do
         inspect(aggregate_uuid)
     end)
 
-    name = Aggregate.name(aggregate_module, aggregate_uuid)
+    via_tuple =
+      Aggregate.name(aggregate_module, aggregate_uuid)
+      |> Registration.via_tuple()
 
-    case Registration.start_child(name, __MODULE__, [aggregate_module, aggregate_uuid]) do
+    case start_registered_child([aggregate_module, aggregate_uuid], via_tuple) do
       {:ok, _pid} ->
         {:ok, aggregate_uuid}
 
