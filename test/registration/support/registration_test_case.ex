@@ -19,12 +19,12 @@ defmodule Commanded.RegistrationTestCase do
 
     describe "`start_child/3`" do
       test "should return child process PID on success" do
-        assert {:ok, _pid} = RegisteredSupervisor.start_registered_child("child")
+        assert {:ok, _pid} = start_registered_child_by_name("child")
       end
 
       test "should return existing child process when already started" do
-        assert {:ok, pid} = RegisteredSupervisor.start_registered_child("child")
-        assert {:ok, ^pid} = RegisteredSupervisor.start_registered_child("child")
+        assert {:ok, pid} = start_registered_child_by_name("child")
+        assert {:ok, ^pid} = start_registered_child_by_name("child")
       end
     end
 
@@ -45,7 +45,7 @@ defmodule Commanded.RegistrationTestCase do
       end
 
       test "should return `PID` when child registered" do
-        assert {:ok, pid} = RegisteredSupervisor.start_registered_child("child")
+        assert {:ok, pid} = start_registered_child_by_name("child")
         assert Registration.whereis_name("child") == pid
       end
 
@@ -57,6 +57,16 @@ defmodule Commanded.RegistrationTestCase do
 
     defp start_link(name) do
       Registration.start_link(name, RegisteredServer, [name])
+    end
+
+    defp start_registered_child_by_name(name) do
+
+      via_tuple = Registration.via_tuple(name)
+
+      case RegisteredSupervisor.start_registered_child(name, via_tuple) do
+        {:error, {:already_started, pid}} -> {:ok, pid}
+        reply -> reply
+      end
     end
   end
 end

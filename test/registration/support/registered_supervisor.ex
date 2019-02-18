@@ -12,8 +12,8 @@ defmodule Commanded.Registration.RegisteredSupervisor do
     DynamicSupervisor.start_child(__MODULE__, {Commanded.Registration.RegisteredServer, args})
   end
 
-  def start_registered_child(name) do
-    Registration.start_child(name, __MODULE__, [name])
+  def start_registered_child(name, via_tuple) do
+    __MODULE__.start_child([name, [name: via_tuple]])
   end
 
   def init(_) do
