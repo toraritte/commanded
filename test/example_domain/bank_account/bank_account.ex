@@ -1,4 +1,5 @@
 defmodule Commanded.ExampleDomain.BankAccount do
+  use Commanded.Aggregates.Aggregate
   @moduledoc false
   @derive Jason.Encoder
   defstruct account_number: nil,
