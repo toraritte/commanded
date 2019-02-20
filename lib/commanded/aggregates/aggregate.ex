@@ -59,11 +59,6 @@ defmodule Commanded.Aggregates.Aggregate do
     lifespan_timeout: :infinity
   ]
 
-  @doc false
-  def name(aggregate_module, aggregate_uuid)
-      when is_atom(aggregate_module) and is_binary(aggregate_uuid),
-      do: {aggregate_module, aggregate_uuid}
-
   @doc """
   Execute the given command against the aggregate.
 
@@ -350,8 +345,9 @@ defmodule Commanded.Aggregates.Aggregate do
   def snapshot_options(aggregate_module),
     do: Application.get_env(:commanded, aggregate_module, [])
 
-  def via_name(aggregate_module, aggregate_uuid),
-    do: name(aggregate_module, aggregate_uuid) |> via_tuple()
+  def via_name(aggregate_module, aggregate_uuid)
+    when is_atom(aggregate_module) and is_binary(aggregate_uuid),
+    do: {aggregate_module, aggregate_uuid} |> via_tuple()
 
   def describe(%Aggregate{} = aggregate) do
     %Aggregate{
