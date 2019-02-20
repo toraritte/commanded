@@ -14,9 +14,11 @@ defmodule Commanded.Aggregates.Supervisor do
     DynamicSupervisor.start_link(__MODULE__, arg, name: __MODULE__)
   end
 
-  # args == Aggregate.start_link/1 arguments
-  def start_child(args) do
-    DynamicSupervisor.start_child(__MODULE__, {Commanded.Aggregates.Aggregate, args})
+  def start_child([aggregate_module, aggregate_uuid, opts]) do
+    DynamicSupervisor.start_child(
+      __MODULE__,
+      {aggregate_module, [aggregate_uuid, opts]}
+    )
   end
 
   def start_registered_child(args, via_tuple) do
@@ -36,9 +38,7 @@ defmodule Commanded.Aggregates.Supervisor do
         inspect(aggregate_uuid)
     end)
 
-    via_tuple =
-      Aggregate.name(aggregate_module, aggregate_uuid)
-      |> Registration.via_tuple()
+    via_tuple = Aggregate.via_name(aggregate_module, aggregate_uuid)
 
     case start_registered_child([aggregate_module, aggregate_uuid], via_tuple) do
       {:ok, _pid} ->
