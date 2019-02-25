@@ -129,6 +129,7 @@ defmodule Commanded.Aggregate.Multi do
     end
   end
 
+  # 2019-02-25_0821 NOTE same in Aggregate and in Multi (noted copied both places)
   defp apply_events(aggregate, events) do
     Enum.reduce(events, aggregate, &aggregate.__struct__.apply(&2, &1))
   end
