@@ -68,6 +68,72 @@ defmodule Commanded.Aggregates.AggregateLifespan do
 
   """
 
+  # 2019-02-25_1010 TODO Move AggregateLifespan to Aggregate (implicit coupling)
+  @doc """
+  `gen_statem` (and most `gen_` process) has their own
+  timers and timer-related actions.
+
+  **Why would it be useful to extract it into a behaviour?**
+
+  1. Because  then  the  same lifespan  module  could  be
+     reused  for other  aggregates.
+
+  2.  Respond  to events  from other  aggregates/contexts.
+
+      For  example, shut  down `BankAccount`  if `Billing`
+      context sends  out a `CloseAccount` event.  (This is
+      exremely contrived, and this  case should be handled
+      by `Accounts`  context by  listening to  events like
+      this, or something.)
+
+  WRONG.  Any module  implementing  this behaviour  is
+  still  strongly coupled,  but  implicitly, which  is
+  even worse both 1. and 2. non use-cases.
+
+  The callback  module only works if  every associated
+  aggregate (done in  Router, see moduledoc) implement
+  the  same events.  **Unless**  it is  also an  event
+  handler,  but  that  may complicate  things  because
+  ["Commanded guarantees only one instance of an event
+  handler will  run, regardless of how  many nodes are
+  running"] (https://github.com/commanded/commanded/blob/b7a0ca31686d8a06ad1753dbe2e3f2c1adb64c48/guides/Events.md#event-handlers).
+
+  The implicit coupling:
+
+  In   `AggregateLifespan`  moduledoc   example,  stop
+  events are specified, and  catch-all clauses for all
+  others. Both Aggregate  and ExecutionContext structs
+  hold  references to  lifespan (see  2019-02-25_1052)
+  for some reason.
+
+  When     a     command     is     dispatched,     an
+  `:execute_command`   message   is    sent   to   the
+  aggregate    process,   and    its   `handle_call/3`
+  invokes   `Aggregate.execute_command/2`.   It   will
+  use  `Kernel.apply/3`   to  call   the  user-defined
+  `execute/2`   function   clause,   which   in   turn
+  returns  a   list  of   events  (can  be   an  empty
+  list).  These returned  events  are  applied to  the
+  aggregate's state, and `persist_events/4` is called.
+  `Aggregate.execute_command/2` final  return value is
+  `persist_events/4`'s on success:
+
+    {{:ok, aggregate_version, pending_events}, state}
+    {-------reply----------------------------  state}
+
+  Returning to `handle_call({:execute_command, ...})`,
+  events are  extracted from  the returned  reply (see
+  above), and these events  are only the ones returned
+  by this  aggregate. All lifespan decisions  are base
+  on these.
+
+  -------
+
+  It  would probably  to  be more  prudent handle  any
+  timeouts  and shutdown  conditions in  the aggregate
+  itself.
+  """
+
   @type lifespan :: timeout | :hibernate | :stop
 
   @doc """

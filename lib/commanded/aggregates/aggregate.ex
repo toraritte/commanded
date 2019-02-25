@@ -50,6 +50,8 @@ defmodule Commanded.Aggregates.Aggregate do
 
   @read_event_batch_size 100
 
+  # 2019-02-25_1052 NOTE :lifespan_timeout?
+  # Why have :lifespan_timeout in Aggregate, when ExecutionContext has it too?
   defstruct [
     :aggregate_module,
     :aggregate_uuid,
