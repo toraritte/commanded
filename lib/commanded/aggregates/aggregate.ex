@@ -400,6 +400,22 @@ defmodule Commanded.Aggregates.Aggregate do
         # events from the event store.
         :ok = GenServer.cast(self(), :populate_aggregate_state)
 
+        # 2019-02-26_0826 NOTE When would this happen? Any legit use case?
+        # FLAWED: Two  `BankAccount` synchronized  during a  transfer,
+        #         and  each stream  gets an  event that  the aggregate
+        #         needs   to  respond   to  (e.g.,   `FundsWithdrawn`,
+        #         `FundsDeposited`, respectively).
+        #
+        # BEN'S ANSWER:
+        # > No,  it’s for  deployment scenarios  where you  have
+        # > multiple nodes but are not using distributed Erlang.
+        # > In that setup you might have the same instance of an
+        # > aggregate  process running  on more  than one  node.
+        # > Subscribing to its own  events ensures that commands
+        # > producing events  handled on one node  are broadcast
+        # > to  instances running  on  other  nodes. This  keeps
+        # > their state in-sync
+
         # Subscribe to aggregate's events to catch any events appended to its stream
         # by another process, such as directly appended to the event store.
         :ok = GenServer.cast(self(), :subscribe_to_events)
