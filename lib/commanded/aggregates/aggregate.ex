@@ -369,6 +369,53 @@ defmodule Commanded.Aggregates.Aggregate do
   changing GenServer  to gen_statem, some may  want to
   opt out.
   """
+
+  # 2019-02-27_0819 NOTE (gen_statem not happening)
+  @doc """
+  It  would be  easy to  add workflows  using inserted
+  states in  `gen_statem` (see below), but  it is just
+  too  obscure, and  hard to  follow. Macros  could be
+  defined, but it is probably not worth the complexity
+  right  now, especially,  that  state  name and  data
+  would have to be restored by applying events.
+
+  Maybe  when async  dependencies (see  Wlaschin book)
+  come into play, but `aggregate_module`'s `execute/2`
+  and `apply/2`  are executed in  `gen_server` context
+  even  right  now (in  `handle_call(:execute_command,
+  ...)`)  and using  `gen_statem` would  require major
+  code reorganization.
+
+  ```elixir
+  defmodule A do
+    use GenStateMachine
+
+    defmodule B do
+      defstruct [:a, :b, :c]
+    end
+
+    def handle_event({:call, from}, {:add_a, elem} = event, :empty, %A.B{}) do
+      {:next_state, :a, %A.B{a: elem}, {:next_event, :internal, {:add_b, 42, from}}}
+    end
+
+    def handle_event(:internal, {:add_b, elem, from}, :a, b) do
+      {:next_state, :ab, %A.B{ b | b: elem}, {:next_event, :internal, {:add_c, 7, from}}}
+    end
+
+    def handle_event(:internal, {:add_c, elem, from}, :ab, b) do
+      {:next_state, :empty, %A.B{}, {:reply, from, %A.B{b | c: elem}}}
+    end
+  end
+  ```
+
+  ```text
+  iex(1)> {:ok, pid} = GenStateMachine.start_link(A, {:empty, %A.B{}})
+  {:ok, #PID<0.448.0>}
+  iex(2)> GenStateMachine.call(pid, {:add_a, 27})
+  %A.B{a: 27, b: 42, c: 7}
+  ```
+  """
+
   defmacro __using__(opts) do
     quote do
       use GenServer, restart: :temporary
